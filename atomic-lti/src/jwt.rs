@@ -1,8 +1,14 @@
-use crate::{constants::ALGORITHM, errors::SecureError, stores::key_store::KeyStore};
-use jsonwebtoken::{decode_header, DecodingKey, EncodingKey, Header, Validation};
-use openssl::rsa::Rsa;
+use crate::errors::SecureError;
+#[cfg(feature = "tool-signing")]
+use {
+  crate::constants::ALGORITHM,
+  crate::stores::key_store::KeyStore,
+  jsonwebtoken::{decode_header, DecodingKey, EncodingKey, Header, Validation},
+  openssl::rsa::Rsa,
+};
 
 /// Encode a JSON Web Token (JWT) asynchronously
+#[cfg(feature = "tool-signing")]
 pub fn encode<T: serde::Serialize>(
   claims: &T,
   kid: &str,
@@ -21,6 +27,7 @@ pub fn encode<T: serde::Serialize>(
 }
 
 /// Encode a JWT using an async key store
+#[cfg(feature = "tool-signing")]
 pub async fn encode_using_store<T: serde::Serialize>(
   claims: &T,
   key_store: &dyn KeyStore,
@@ -30,6 +37,7 @@ pub async fn encode_using_store<T: serde::Serialize>(
 }
 
 /// Decode a JSON Web Token (JWT)
+#[cfg(feature = "tool-signing")]
 pub fn decode<T: serde::de::DeserializeOwned + Clone>(
   encoded_jwt: &str,
   rsa_key_pair: Rsa<openssl::pkey::Private>,
@@ -55,6 +63,7 @@ pub fn insecure_decode<T: serde::de::DeserializeOwned + Clone>(
 }
 
 /// Decode a JWT using an async key store
+#[cfg(feature = "tool-signing")]
 pub async fn decode_using_store<T: serde::de::DeserializeOwned + Clone>(
   encoded_jwt: &str,
   key_store: &dyn KeyStore,
@@ -73,7 +82,7 @@ pub async fn decode_using_store<T: serde::de::DeserializeOwned + Clone>(
   }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "tool-signing"))]
 mod tests {
   use super::*;
   use crate::secure::generate_rsa_key_pair;

@@ -1,5 +1,6 @@
 pub mod dynamic_registration_store;
 pub mod jwt_store;
+#[cfg(feature = "tool-signing")]
 pub mod key_store;
 pub mod oidc_state_store;
 pub mod platform_store;

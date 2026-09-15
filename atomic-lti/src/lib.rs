@@ -1,4 +1,5 @@
 pub mod assignment_grade_services;
+#[cfg(feature = "tool-signing")]
 pub mod client_credentials;
 pub mod constants;
 pub mod deep_linking;
