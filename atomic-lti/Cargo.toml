@@ -12,6 +12,12 @@ readme = "README.md"
 keywords = ["lti", "education", "learning", "ims", "oauth"]
 categories = ["web-programming", "authentication"]
 
+[features]
+default = ["tool-signing", "native-tls"]
+tool-signing = ["dep:openssl"]
+native-tls = ["reqwest/default-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+
 [dependencies]
 async-trait = "0.1"
 base64 = "0.22"
@@ -19,10 +25,15 @@ cached = { version = "0.56", features = ["async"] }
 chrono = { version = "0.4", features = ["serde"] }
 derive_more = { version = "2", features = ["full"] }
 jsonwebtoken = { version = "10.1", features = ["rust_crypto"] }
-openssl = { version = "0.10", features = ["vendored"] }
+openssl = { version = "0.10", features = ["vendored"], optional = true }
 phf = { version = "0.13", features = ["macros"] }
 rand = { version = "0.9", features = ["std_rng"] }
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", default-features = false, features = [
+  "json",
+  "charset",
+  "http2",
+  "system-proxy",
+] }
 serde = { version = "1.0", features = ["derive"] }
 serde_with = "3.14"
 serde_json = "1.0"

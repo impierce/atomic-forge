@@ -1,7 +1,6 @@
-use crate::errors::SecureError;
-use openssl::rsa::Rsa;
-use openssl::symm::Cipher;
 use rand::Rng;
+#[cfg(feature = "tool-signing")]
+use {crate::errors::SecureError, openssl::rsa::Rsa, openssl::symm::Cipher};
 
 pub fn generate_secure_string(len: usize) -> String {
   rand::rng()
@@ -11,6 +10,7 @@ pub fn generate_secure_string(len: usize) -> String {
     .collect()
 }
 
+#[cfg(feature = "tool-signing")]
 pub fn decrypt_rsa_private_key(
   key: &str,
   passphrase: &str,
@@ -23,6 +23,7 @@ pub fn decrypt_rsa_private_key(
 
 /// Generate a new RSA key pair and return the private key as a PEM string.
 /// The password is used to encrypt the private key and is required to decrypt it.
+#[cfg(feature = "tool-signing")]
 pub fn generate_rsa_key_pair(
   passphrase: &str,
 ) -> Result<(Rsa<openssl::pkey::Private>, String), SecureError> {
@@ -52,6 +53,7 @@ mod tests {
     assert_eq!(secure_string.len(), len);
   }
 
+  #[cfg(feature = "tool-signing")]
   #[test]
   fn test_generate_rsa_key_pair() {
     let passphrase = "asdfasdf";
