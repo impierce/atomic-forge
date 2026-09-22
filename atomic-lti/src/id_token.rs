@@ -79,7 +79,7 @@ pub struct LaunchPresentationClaim {
   // the user has finished activity, or if the receiver cannot start because of some technical difficulty.
   pub return_url: Option<String>,
   // Language, country, and variant as represented using the IETF Best Practices for Tags for Identifying Languages
-  pub locale: String,
+  pub locale: Option<String>,
   // Height of the window or frame where the content from the message receiver will be displayed to the user.
   pub height: Option<i32>,
   // Width of the window or frame where the content from the message receiver will be displayed to the user.
