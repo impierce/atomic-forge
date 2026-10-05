@@ -128,7 +128,7 @@ pub struct AGSClaim {
 #[skip_serializing_none]
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct LISClaim {
-  pub person_sourcedid: String,
+  pub person_sourcedid: Option<String>,
   pub course_offering_sourcedid: Option<String>,
   pub course_section_sourcedid: Option<String>,
   pub validation_context: Option<String>,
@@ -592,6 +592,30 @@ mod tests {
     };
     let errors = id_token.validate("example.com");
     assert_eq!(errors.len(), 0);
+  }
+
+  #[test]
+  fn test_deserialize_lis_claim_without_person_sourcedid() {
+    let json = r#"{
+      "aud": "client-id",
+      "exp": 1700000000,
+      "iat": 1690000000,
+      "iss": "https://brightspace.example.com",
+      "nonce": "nonce",
+      "sub": "user-1",
+      "https://purl.imsglobal.org/spec/lti/claim/message_type": "LtiResourceLinkRequest",
+      "https://purl.imsglobal.org/spec/lti/claim/version": "1.3.0",
+      "https://purl.imsglobal.org/spec/lti/claim/deployment_id": "deployment-1",
+      "https://purl.imsglobal.org/spec/lti/claim/target_link_uri": "https://tool.example.com/launch",
+      "https://purl.imsglobal.org/spec/lti/claim/roles": [],
+      "https://purl.imsglobal.org/spec/lti/claim/lis": {
+        "course_offering_sourcedid": "course-123"
+      }
+    }"#;
+    let id_token: IdToken = serde_json::from_str(json).expect("IdToken should deserialize");
+    let lis = id_token.lis.expect("lis claim should be present");
+    assert_eq!(lis.person_sourcedid, None);
+    assert_eq!(lis.course_offering_sourcedid, Some("course-123".to_string()));
   }
 
   // Tests that mint a signing key, and so need the Tool's own RSA private key.
