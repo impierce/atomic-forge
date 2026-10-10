@@ -49,6 +49,7 @@ pub enum SecureError {
   InvalidKeyId,
 }
 
+#[cfg(feature = "tool-signing")]
 impl From<openssl::error::ErrorStack> for SecureError {
   fn from(error: openssl::error::ErrorStack) -> Self {
     SecureError::KeyError(error.to_string())

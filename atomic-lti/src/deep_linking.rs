@@ -3,16 +3,15 @@ use self::image::Image;
 use self::link::Link;
 use self::lti_resource_link::LTIResourceLink;
 use crate::deep_linking::file::File;
-use crate::errors::SecureError;
-use crate::jwt;
 use crate::{
   lti_definitions::{DEEP_LINKING_VERSION, LTI_DEEP_LINKING_RESPONSE},
   secure::generate_secure_string,
 };
 use chrono::{Duration, Utc};
-use openssl::rsa::Rsa;
 use serde::{Deserialize, Serialize};
 use serde_with::skip_serializing_none;
+#[cfg(feature = "tool-signing")]
+use {crate::errors::SecureError, crate::jwt, openssl::rsa::Rsa};
 
 pub mod file;
 pub mod html_fragment;
@@ -105,6 +104,7 @@ impl DeepLinkPayload {
 pub struct DeepLinking;
 
 impl DeepLinking {
+  #[cfg(feature = "tool-signing")]
   pub fn create_deep_link_jwt(
     client_id: &str,
     iss: &str,

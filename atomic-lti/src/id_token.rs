@@ -469,9 +469,6 @@ impl Default for IdToken {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::jwks::{decode, encode, generate_jwk, Jwks};
-  use jsonwebtoken::jwk::JwkSet;
-  use openssl::rsa::Rsa;
 
   #[test]
   fn test_id_token_incorrect_target_link_uri() {
@@ -597,94 +594,103 @@ mod tests {
     assert_eq!(errors.len(), 0);
   }
 
-  #[test]
-  fn test_extract_iss() {
-    let iss = "https://lms.example.com";
-    let aud = "1234";
-    let user_id = "12";
-    let rsa_key_pair = Rsa::generate(2048).expect("Failed to generate RSA key");
-    let kid = "asdf_kid";
-    let jwk = generate_jwk(kid, &rsa_key_pair).expect("Failed to generate JWK");
+  // Tests that mint a signing key, and so need the Tool's own RSA private key.
+  #[cfg(feature = "tool-signing")]
+  mod signing {
+    use super::*;
+    use crate::jwks::{decode, encode, generate_jwk, Jwks};
+    use jsonwebtoken::jwk::JwkSet;
+    use openssl::rsa::Rsa;
 
-    // Set the expiration time to 15 minutes from now
-    let expiration = Utc::now() + Duration::minutes(15);
+    #[test]
+    fn test_extract_iss() {
+      let iss = "https://lms.example.com";
+      let aud = "1234";
+      let user_id = "12";
+      let rsa_key_pair = Rsa::generate(2048).expect("Failed to generate RSA key");
+      let kid = "asdf_kid";
+      let jwk = generate_jwk(kid, &rsa_key_pair).expect("Failed to generate JWK");
 
-    // Create a sample ID Token with an iss claim
-    let id_token = IdToken {
-      iss: iss.to_string(),
-      sub: user_id.to_string(),
-      aud: aud.to_string(),
-      exp: expiration.timestamp(),
-      message_type: LTI_DEEP_LINKING_REQUEST.to_string(),
-      deep_linking: Some(DeepLinkingClaim {
-        deep_link_return_url: "example.com".to_string(),
-        accept_types: vec![AcceptTypes::Link],
-        accept_presentation_document_targets: vec![DocumentTargets::Iframe],
-        accept_media_types: None,
-        accept_multiple: None,
-        accept_lineitem: None,
-        auto_create: None,
-        title: None,
-        text: None,
-        data: None,
-      }),
-      launch_presentation: None,
-      ..Default::default()
-    };
+      // Set the expiration time to 15 minutes from now
+      let expiration = Utc::now() + Duration::minutes(15);
 
-    // Encode the ID Token using the private key
-    let token = encode(&id_token, &jwk.kid, rsa_key_pair).expect("Failed to encode token");
+      // Create a sample ID Token with an iss claim
+      let id_token = IdToken {
+        iss: iss.to_string(),
+        sub: user_id.to_string(),
+        aud: aud.to_string(),
+        exp: expiration.timestamp(),
+        message_type: LTI_DEEP_LINKING_REQUEST.to_string(),
+        deep_linking: Some(DeepLinkingClaim {
+          deep_link_return_url: "example.com".to_string(),
+          accept_types: vec![AcceptTypes::Link],
+          accept_presentation_document_targets: vec![DocumentTargets::Iframe],
+          accept_media_types: None,
+          accept_multiple: None,
+          accept_lineitem: None,
+          auto_create: None,
+          title: None,
+          text: None,
+          data: None,
+        }),
+        launch_presentation: None,
+        ..Default::default()
+      };
 
-    // Test the extract_iss function
-    let extracted_iss = IdToken::extract_iss(&token).unwrap();
-    assert_eq!(extracted_iss, iss);
-  }
+      // Encode the ID Token using the private key
+      let token = encode(&id_token, &jwk.kid, rsa_key_pair).expect("Failed to encode token");
 
-  #[test]
-  fn test_decode() {
-    let iss = "https://lms.example.com";
-    let aud = "1234";
-    let user_id = "12";
-    let rsa_key_pair = Rsa::generate(2048).expect("Failed to generate RSA key");
-    let kid = "asdf_kid";
-    let jwk = generate_jwk(kid, &rsa_key_pair).expect("Failed to generate JWK");
-    let jwks = Jwks {
-      keys: vec![jwk.clone()],
-    };
-    let jwks_json = serde_json::to_string(&jwks).expect("Failed to generate JSON for JWKS");
+      // Test the extract_iss function
+      let extracted_iss = IdToken::extract_iss(&token).unwrap();
+      assert_eq!(extracted_iss, iss);
+    }
 
-    // Set the expiration time to 15 minutes from now
-    let expiration = Utc::now() + Duration::minutes(15);
+    #[test]
+    fn test_decode() {
+      let iss = "https://lms.example.com";
+      let aud = "1234";
+      let user_id = "12";
+      let rsa_key_pair = Rsa::generate(2048).expect("Failed to generate RSA key");
+      let kid = "asdf_kid";
+      let jwk = generate_jwk(kid, &rsa_key_pair).expect("Failed to generate JWK");
+      let jwks = Jwks {
+        keys: vec![jwk.clone()],
+      };
+      let jwks_json = serde_json::to_string(&jwks).expect("Failed to generate JSON for JWKS");
 
-    // Create a sample ID Token with an iss claim
-    let id_token = IdToken {
-      iss: iss.to_string(),
-      sub: user_id.to_string(),
-      aud: aud.to_string(),
-      exp: expiration.timestamp(),
-      message_type: LTI_DEEP_LINKING_REQUEST.to_string(),
-      deep_linking: Some(DeepLinkingClaim {
-        deep_link_return_url: "example.com".to_string(),
-        accept_types: vec![AcceptTypes::Link],
-        accept_presentation_document_targets: vec![DocumentTargets::Iframe],
-        accept_media_types: None,
-        accept_multiple: None,
-        accept_lineitem: None,
-        auto_create: None,
-        title: None,
-        text: None,
-        data: None,
-      }),
-      launch_presentation: None,
-      ..Default::default()
-    };
+      // Set the expiration time to 15 minutes from now
+      let expiration = Utc::now() + Duration::minutes(15);
 
-    // Encode the ID Token using the private key
-    let token = encode(&id_token, &jwk.kid, rsa_key_pair).expect("Failed to encode token");
+      // Create a sample ID Token with an iss claim
+      let id_token = IdToken {
+        iss: iss.to_string(),
+        sub: user_id.to_string(),
+        aud: aud.to_string(),
+        exp: expiration.timestamp(),
+        message_type: LTI_DEEP_LINKING_REQUEST.to_string(),
+        deep_linking: Some(DeepLinkingClaim {
+          deep_link_return_url: "example.com".to_string(),
+          accept_types: vec![AcceptTypes::Link],
+          accept_presentation_document_targets: vec![DocumentTargets::Iframe],
+          accept_media_types: None,
+          accept_multiple: None,
+          accept_lineitem: None,
+          auto_create: None,
+          title: None,
+          text: None,
+          data: None,
+        }),
+        launch_presentation: None,
+        ..Default::default()
+      };
 
-    // Test the decode function with an id token
-    let jwk_set: JwkSet = serde_json::from_str(&jwks_json).expect("Failed to parse JWKS");
-    let extracted_id_token = decode(&token, &jwk_set).expect("Failed to decode token");
-    assert_eq!(extracted_id_token.aud, aud);
+      // Encode the ID Token using the private key
+      let token = encode(&id_token, &jwk.kid, rsa_key_pair).expect("Failed to encode token");
+
+      // Test the decode function with an id token
+      let jwk_set: JwkSet = serde_json::from_str(&jwks_json).expect("Failed to parse JWKS");
+      let extracted_id_token = decode(&token, &jwk_set).expect("Failed to decode token");
+      assert_eq!(extracted_id_token.aud, aud);
+    }
   }
 }
